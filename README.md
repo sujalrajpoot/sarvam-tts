@@ -4,6 +4,8 @@
 
 > Ideal for developers building voice experiences, educational tools, accessibility features, and multilingual narration.
 
+> ⚠️ **Disclaimer:** This project is provided for educational and research purposes only. Use of the Sarvam AI API should comply with Sarvam AI's terms of service and acceptable use policies, and must not violate API guidelines or usage restrictions.
+
 ---
 
 ## ✨ Features
