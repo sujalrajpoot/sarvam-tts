@@ -24,6 +24,13 @@ setup(
     install_requires=["requests>=2.31.0"],
     keywords=[
         "sarvam",
+        "sarvam-ai",
+        "sarvam-ai-tts",
+        "sarvam-ai-tts-python",
+        "sarvam-ai-tts-python-sdk",
+        "sarvamai-tts",
+        "sarvamai-tts-python",
+        "sarvamai-tts-python-sdk",
         "tts",
         "text-to-speech",
         "speech-synthesis",
