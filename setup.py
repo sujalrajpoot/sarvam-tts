@@ -4,10 +4,11 @@ from setuptools import find_packages, setup
 
 BASE_DIR = Path(__file__).parent
 README = (BASE_DIR / "README.md").read_text(encoding="utf-8")
+LICENSE = (BASE_DIR / "LICENSE").read_text(encoding="utf-8")
 
 setup(
     name="sarvam-tts",
-    version="1.0.0",
+    version="1.0",
     description=(
         "A Python client for Sarvam AI text-to-speech that supports multilingual "
         "Indian language synthesis."
@@ -22,6 +23,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.8",
     install_requires=["requests>=2.31.0"],
+    license_files=[LICENSE],
     keywords=[
         "sarvam",
         "sarvam-ai",
