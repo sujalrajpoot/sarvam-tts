@@ -1,3 +1,8 @@
 # Byte-compiled / optimized / Test files
 __pycache__/
 Test/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
