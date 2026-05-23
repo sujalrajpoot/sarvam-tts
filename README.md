@@ -1,176 +1,210 @@
-﻿## 🚀 Sarvam TTS
+﻿# Sarvam TTS
 
-**`sarvam-tts`** is a lightweight, production-ready Python client for the Sarvam AI Text-to-Speech API. It converts text into natural-sounding speech across multiple Indian languages, while preserving sentence structure using an advanced multilingual tokenizer.
+**sarvam-tts** is a Python client for the Sarvam AI text-to-speech API. It provides a clean `SarvamTTS` interface for multilingual Indian language synthesis, configurable output settings, and chunked request handling for reliable audio generation.
 
-> Ideal for developers building voice experiences, educational tools, accessibility features, and multilingual narration.
-
-> ⚠️ **Disclaimer:** This project is provided for educational and research purposes only. Use of the Sarvam AI API should comply with Sarvam AI's terms of service and acceptable use policies, and must not violate API guidelines or usage restrictions.
-
----
+> ⚠️ This project is provided for educational and research purposes only. Please comply with Sarvam AI's terms of service and acceptable use policies when using the API.
 
 ## ✨ Features
 
-- 🎙️ Multilingual speech generation for Indian languages
-- 🔧 Easy-to-use `SarvamTTS` client with configurable voice, pace, temperature, and sample rate
-- 🧠 Smart sentence tokenization using `MultilingualSentenceTokenizer`
-- ⚡ Concurrent chunk generation for more reliable TTS output
-- 🧩 Handles abbreviations, URLs, email addresses, and multilingual scripts
-- 💾 Saves output as MP3 directly with a single API call
+- Multi-language TTS support for Indian languages
+- Simple `SarvamTTS` API for generating MP3 output
+- Configurable `TTSConfig` for language, voice, pace, temperature, sample rate, and timeout
+- Concurrent chunk generation for long texts
+- Package metadata and install support via `setup.py`
 
----
+## 📁 Project Structure
 
-## 📦 Project Structure
-
-| File | Purpose |
-|---|---|
-| `sarvamtts.py` | Main TTS client and API integration |
-| `multilingual_tokenizer.py` | Advanced sentence tokenizer for Indian languages |
-| `README.md` | Project documentation |
-| `LICENSE` | MIT license |
-
----
-
-## 📌 Quick Start
-
-### 1. Clone Respository
-```bash
-git clone https://github.com/sujalrajpoot/sarvam-tts.git
+```text
+sarvam-tts/
+├── README.md
+├── LICENSE
+├── requirements.txt
+├── setup.py
+├── example.py
+├── sarvam_tts/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── exceptions.py
+│   ├── utils.py
+│   └── providers/
+│       ├── __init__.py
+│       ├── base.py
+│       └── sarvam.py
+└── .github/
+    └── workflows/
+        └── workflow.yml
 ```
 
-### 2. Install dependencies
+### Package contents
 
+- `sarvam_tts/__init__.py` exports the public API: `SarvamTTS`, `TTSConfig`, `TTSException`, and `TTSRequestError`
+- `sarvam_tts/config.py` contains supported languages, default API URL, and configuration validation
+- `sarvam_tts/providers/sarvam.py` implements the Sarvam AI request flow and audio saving logic
+- `sarvam_tts/providers/base.py` defines the provider abstraction
+- `sarvam_tts/utils.py` contains the multilingual sentence tokenizer
+- `example.py` demonstrates basic usage
+
+## 🛠️ Installation
+
+**Using PyPI (Recommended)**
 ```bash
+pip install sarvam-tts
+```
+
+**Clone Locally**
+```bash
+git clone https://github.com/sujalrajpoot/sarvam-tts.git
+cd sarvam-tts
 pip install -r requirements.txt
 ```
 
-### 3. Run the example script
-
-```bash
-python sarvamtts.py
-```
-
-### 4. Use the library from your application
+## 🧪 Quick Start
 
 ```python
-from sarvamtts import SarvamTTS
+from sarvam_tts import SarvamTTS
 
-client = SarvamTTS(verbose=True)
-result = client.tts(
+client = SarvamTTS()
+
+output_path = client.tts(
     text="Hello from Sarvam TTS!",
     language="english",
     voice="shreya",
     pace=1.0,
     temperature=0.6,
     sample_rate=22050,
-    output_filepath="output.mp3"
+    output_filepath="output.mp3",
 )
-print(result)
+
+print(output_path)
 ```
 
----
+You can also customize the configuration directly:
 
-## 🧠 Usage Guide
+```python
+from sarvam_tts import TTSConfig, SarvamTTS
 
-### Available voices
+config = TTSConfig(
+    language="hindi",
+    voice="shreya",
+    pace=1.0,
+    temperature=0.4,
+    sample_rate=22050,
+    output_path="demo/output.mp3",
+)
 
-The library currently supports the following voice names:
-
-`shreya`, `shubh`, `manan`, `ishita`, `priya`, `suhani`, `ashutosh`, `ritu`, `amit`, `sumit`, `pooja`, `simran`, `rahul`, `kavya`, `ratan`, `shruti`, `aditya`, `soham`, `rehan`, `vijay`, `tarun`, `anand`, `aayan`, `rohan`, `dev`, `sunny`, `kabir`, `varun`, `neha`, `mani`, `mohit`, `rupali`, `advait`, `roopa`, `tanya`, `gokul`, `kavitha`
-
-### Supported languages
-
-| Language | Code |
-|---|---|
-| English | `en-IN` |
-| Hindi | `hi-IN` |
-| Bengali | `bn-IN` |
-| Tamil | `ta-IN` |
-| Telugu | `te-IN` |
-| Kannada | `kn-IN` |
-| Malayalam | `ml-IN` |
-| Marathi | `mr-IN` |
-| Gujarati | `gu-IN` |
-| Punjabi | `pa-IN` |
-| Odia | `od-IN` |
-
-### TTS method parameters
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `text` | `str` | required | Input text to convert to speech |
-| `language` | `str` | required | Target language name |
-| `voice` | `str` | required | Voice speaker name |
-| `pace` | `float` | `1.0` | Speech speed, between `0.5` and `2.0` |
-| `temperature` | `float` | `0.6` | Voice randomness, between `0.0` and `1.0` |
-| `sample_rate` | `int` | `22050` | Output sample rate: `22050`, `8000`, or `48000` |
-| `output_filepath` | `str` | `sarvam-tts.mp3` | Output file path |
-
----
-
-## 🌐 Architecture Overview
-
-```mermaid
-flowchart TD
-    A[User Input Text] --> B[MultilingualSentenceTokenizer]
-    B --> C[Text Chunks]
-    C --> D[Concurrent API Requests]
-    D --> E[Audio Chunks]
-    E --> F[Combine MP3 Data]
-    F --> G[Save Output File]
-    G --> H[Final MP3 Ready]
+client = SarvamTTS(config=config)
+client.tts("नमस्ते, यह एक उदाहरण है।")
 ```
 
-### How it works
+## 🧠 Supported Languages
 
-1. `SarvamTTS` accepts text and configuration options.
-2. `MultilingualSentenceTokenizer` splits the text into language-aware sentence chunks.
-3. Each chunk is sent concurrently to the Sarvam AI TTS endpoint.
-4. The binary audio chunks are collected and merged.
-5. The final MP3 is written to disk.
+- `english`
+- `hindi`
+- `bengali`
+- `tamil`
+- `telugu`
+- `kannada`
+- `malayalam`
+- `marathi`
+- `gujarati`
+- `punjabi`
+- `odia`
 
----
+## 🎤 Example Voice Names
 
-## 🔧 Tips & Best Practices
+The library supports common voice names such as:
 
-- 💡 Prefer shorter text chunks for faster and more reliable audio generation.
-- 💡 Use a stable internet connection to avoid request retries.
-- 💡 For production usage, handle exceptions around `client.tts(...)` to retry or log failures.
-- 💡 If you need a custom voice or new language, add support in the `get_voices` and `get_languages` methods.
+- `shreya`
+- `shubh`
+- `manan`
+- `ishita`
+- `priya`
+- `suhani`
+- `ashutosh`
+- `ritu`
+- `amit`
+- `sumit`
+- `pooja`
+- `simran`
+- `rahul`
+- `kavya`
+- `ratan`
+- `shruti`
+- `aditya`
+- `soham`
+- `rehan`
+- `vijay`
+- `tarun`
+- `anand`
+- `aayan`
+- `rohan`
+- `dev`
+- `sunny`
+- `kabir`
+- `varun`
+- `neha`
+- `mani`
+- `mohit`
+- `rupali`
+- `advait`
+- `roopa`
+- `tanya`
+- `gokul`
+- `kavitha`
 
-> Note: This project relies on the Sarvam AI public API behavior. API responses may change over time.
+## 🔧 API Reference
 
----
+### `SarvamTTS.tts(...)`
 
-## 🧪 Testing & Validation
+Parameters:
 
-To validate the tokenizer behavior quickly, you can run:
+- `text` – text to synthesize
+- `language` – optional override for the language
+- `voice` – optional override for the voice
+- `pace` – optional override for speaking pace
+- `temperature` – optional override for voice variability
+- `sample_rate` – optional override for sample rate
+- `output_filepath` – optional output path
+
+### `TTSConfig`
+
+The configuration object provides defaults for:
+
+- `timeout`
+- `verbose`
+- `output_path`
+- `language`
+- `voice`
+- `pace`
+- `temperature`
+- `sample_rate`
+- `api_url`
+
+## 🖼️ How It Works
+
+1. `SarvamTTS` accepts text and configuration values.
+2. The text is split into sentence-level chunks.
+3. Each chunk is sent to the Sarvam AI endpoint concurrently.
+4. Audio responses are merged into a single MP3 payload.
+5. The final audio is saved to the requested output path.
+
+## 🧪 Running the Example
 
 ```bash
-python multilingual_tokenizer.py
+python example.py
 ```
 
-This will print language-specific sentence splitting results for sample text blocks.
-
----
+The script generates sample audio files in a `Test/` directory.
 
 ## 🤝 Contributing
 
-Contributions, bug reports, and feature requests are welcome!
+Contributions are welcome. To contribute:
 
 1. Fork the repository
-2. Create a branch: `git checkout -b feature/my-improvement`
+2. Create a feature branch
 3. Commit your changes
 4. Open a pull request
 
-### Suggested improvements
-
-- Add packaging support with `pyproject.toml`
-- Provide a `requirements.txt`
-- Add a CLI wrapper for easier command-line usage
-- Extend voice / language configuration through a YAML or JSON file
-
----
-
 ## 📄 License
 
-This project is licensed under the **MIT License**. See `LICENSE` for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

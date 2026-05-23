@@ -1,161 +1,8 @@
-import time
-import requests
-from io import BytesIO
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from multilingual_tokenizer import MultilingualSentenceTokenizer
-from typing import List
-
-class SarvamTTS:
-    def __init__(self, verbose: bool = True) -> None:
-        self.verbose = verbose
-        self.api_url = "https://www.sarvam.ai/api/playground/tts"
-        self.headers = {
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.7',
-            'content-type': 'application/json',
-            'origin': 'https://www.sarvam.ai',
-            'priority': 'u=1, i',
-            'referer': 'https://www.sarvam.ai/apis/text-to-speech',
-            'sec-ch-ua': '"Chromium";v="148", "Brave";v="148", "Not/A)Brand";v="99"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-origin',
-            'sec-gpc': '1',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36'
-        }
-        self.tokenizer = MultilingualSentenceTokenizer()
-
-    def get_voices(self) -> list:
-        return ['shreya', 'shubh', 'manan', 'ishita', 'priya', 'suhani', 'ashutosh', 'ritu', 'amit', 'sumit', 'pooja', 'simran', 'rahul', 'kavya', 'ratan', 'shruti', 'aditya', 'soham', 'rehan', 'vijay', 'tarun', 'anand', 'aayan', 'rohan', 'dev', 'sunny', 'kabir', 'varun', 'neha', 'mani', 'mohit', 'rupali', 'advait', 'roopa', 'tanya', 'gokul', 'kavitha']
-    
-    def get_languages(self) -> dict:
-        return {
-            "english": "en-IN",
-            "hindi": "hi-IN",
-            "bengali": "bn-IN",
-            "tamil": "ta-IN",
-            "telugu": "te-IN",
-            "kannada": "kn-IN",
-            "malayalam": "ml-IN",
-            "marathi": "mr-IN",
-            "gujarati": "gu-IN",
-            "punjabi": "pa-IN",
-            "odia": "od-IN"
-        }
-    
-    def _save_audio(self, audio_data: bytes, output_filepath: str) -> None:
-        with open(output_filepath, "wb") as f:
-            f.write(audio_data)
-        print(f"Audio saved to {output_filepath}")
-
-    def _split_into_sentences(self, text: str) -> List[str]:
-        """
-        # Convenience function to split text into sentences using SentenceTokenizer.
-        
-        Args:
-            text (str): Input text to split into sentences.
-        
-        Returns:
-            List[str]: List of properly formatted sentences.
-        """
-        return self.tokenizer.tokenize(text.strip())
-
-    def tts(self, text: str, language: str, voice: str, pace: float = 1.0, temperature: float = 0.6, sample_rate: int = 22050, output_filepath: str = "sarvam-tts.mp3") -> bytes:
-        """
-        Converts text to speech using the SarvamTTS API and saves it to a file.
-        """
-        if temperature < 0.0 or temperature > 1.0:
-            raise ValueError("Temperature must be between 0.0 and 1.0")
-        
-        if pace < 0.5 or pace > 2.0:
-            raise ValueError("Pace must be between 0.5 and 2.0")
-        
-        if sample_rate not in [22050, 8000, 48000]:
-            raise ValueError("Sample rate must be one of 22050, 8000, or 48000")
-        
-        # Split text into sentences
-        sentences = self.tokenizer.tokenize(text, language=language)
-        for index, sen in enumerate(sentences):
-            print(f"{index}. Sentence: {sen}\n")
-
-        languages = self.get_languages()
-
-        # Function to request audio for each chunk
-        def generate_audio_for_chunk(part_text: str, part_number: int):
-            while True:
-                try:
-                    json_data = {
-                        'text': part_text,
-                        'target_language_code': languages.get(language.lower(), 'en-IN'),
-                        'speaker': voice,
-                        'model': 'bulbul:v3-beta',
-                        'pace': pace,
-                        'speech_sample_rate': sample_rate,
-                        'temperature': temperature,
-                        'enable_preprocessing': True,
-                        'output_audio_codec': 'mp3',
-                    }
-                    response = requests.post(self.api_url, headers=self.headers, json=json_data)
-                    if response.content:
-                        try:
-                            # Try parsing response as JSON
-                            json_response = response.json()
-                            print(f"Received JSON response for chunk {part_number}: {json_response}")
-                        except ValueError:
-                            # If not JSON, treat it as audio data
-                            audio_data = response.content
-                            
-                            if self.verbose:
-                                print(f"Chunk {part_number} processed successfully.")
-                            return part_number, audio_data
-                    else:
-                        if self.verbose:
-                            print(f"No data received for chunk {part_number}. Retrying...")
-                except requests.RequestException as e:
-                    if self.verbose:
-                        print(f"Error for chunk {part_number}: {e}. Retrying...")
-                    time.sleep(1)
-        try:
-            # Using ThreadPoolExecutor to handle requests concurrently
-            with ThreadPoolExecutor() as executor:
-                futures = {executor.submit(generate_audio_for_chunk, sentence.strip(), chunk_num): chunk_num 
-                        for chunk_num, sentence in enumerate(sentences, start=1)}
-                
-                # Dictionary to store results with order preserved
-                audio_chunks = {}
-
-                for future in as_completed(futures):
-                    chunk_num = futures[future]
-                    try:
-                        part_number, audio_data = future.result()
-                        audio_chunks[part_number] = audio_data  # Store the audio data in correct sequence
-                    except Exception as e:
-                        if self.verbose:
-                            print(f"Failed to generate audio for chunk {chunk_num}: {e}")
-
-            # Combine audio chunks in the correct sequence
-            combined_audio = BytesIO()
-            for part_number in sorted(audio_chunks.keys()):
-                combined_audio.write(audio_chunks[part_number])
-                if self.verbose:
-                    print(f"Added chunk {part_number} to the combined file.")
-
-            # Save the combined audio data to a single file
-            with open(output_filepath, 'wb') as f:
-                f.write(combined_audio.getvalue())
-            if self.verbose:print(f"\033[1;93mFinal Audio Saved as {output_filepath}.\033[0m")
-            return f"\033[1;93mFinal Audio Saved as {output_filepath}.\033[0m"
-
-        except requests.exceptions.RequestException as e:
-            raise requests.RequestException(
-                f"Failed to perform the operation: {e}"
-            )
+import os
+from sarvam_tts import SarvamTTS
 
 if __name__ == "__main__":
     # Initialize the tokenizer and TTS class
-    tokenizer = MultilingualSentenceTokenizer()
     sarvam_tts = SarvamTTS()
 
     # Test cases for different languages
@@ -237,11 +84,12 @@ if __name__ == "__main__":
         )
     }
     
-    print("Multilingual Sentence Tokenizer Test Results\n" + "="*50)
+    print(sarvam_tts.get_languages())
+    print(sarvam_tts.get_voices())
     
+    # Create output directory if it doesn't exist
+    os.makedirs("Test", exist_ok=True)
+
     for lang, text in test_texts.items():
-        print(f"\n{lang.upper()}:")
-        print(f"Input: {text}")
-        sentences = tokenizer.tokenize(text, language=lang)
-        voice = "shreya"
-        # sarvam_tts.tts(text=text, language=lang, voice=voice, output_filepath=f"output_{lang}.mp3")
+        print(f"{lang.upper()}: Input: {text}")
+        sarvam_tts.tts(text=text, language=lang, voice="shreya", output_filepath=f"Test/output_{lang}.mp3")
