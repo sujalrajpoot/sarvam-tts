@@ -29,10 +29,7 @@ sarvam-tts/
 │   └── providers/
 │       ├── __init__.py
 │       ├── base.py
-│       └── sarvam.py
-└── .github/
-    └── workflows/
-        └── workflow.yml
+└───────└── sarvam.py
 ```
 
 ### Package contents
