@@ -3,7 +3,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
 from typing import List, Optional
-
+from pathlib import Path
 import requests
 
 from sarvam_tts.config import SUPPORTED_LANGUAGES, TTSConfig
@@ -13,6 +13,9 @@ from sarvam_tts.utils import MultilingualSentenceTokenizer
 
 
 class SarvamTTS(TTSProvider):
+    """
+    A Python client for Sarvam AI text-to-speech that supports multilingual Indian language synthesis.
+    """
     def __init__(self, config: Optional[TTSConfig] = None, verbose: Optional[bool] = None) -> None:
         super().__init__(config)
 
@@ -96,7 +99,7 @@ class SarvamTTS(TTSProvider):
             with open(output_filepath, "wb") as handle:
                 handle.write(audio_data)
             if self.verbose:
-                print(f"Audio saved to {output_filepath}")
+                print(f"Audio saved to {(Path(output_filepath).resolve())}")
         except OSError as exc:
             raise TTSOutputError(f"Failed to save audio to '{output_filepath}': {exc}") from exc
 
@@ -213,8 +216,8 @@ class SarvamTTS(TTSProvider):
 
             self._save_audio(combined_audio.getvalue(), config.output_path)
             if self.verbose:
-                print(f"Final Audio Saved as {config.output_path}.")
-            return config.output_path
+                print(f"Final Audio Saved as {Path(config.output_path).resolve()}.")
+            return Path(config.output_path).resolve()
         except (TTSRequestError, TTSAPIError, TTSOutputError):
             raise
         except Exception as exc:

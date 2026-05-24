@@ -8,7 +8,7 @@ LICENSE = (BASE_DIR / "LICENSE").read_text(encoding="utf-8")
 
 setup(
     name="sarvam-tts",
-    version="1.0",
+    version="1.1",
     description=(
         "A Python client for Sarvam AI text-to-speech that supports multilingual "
         "Indian language synthesis."
